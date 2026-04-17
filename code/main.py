@@ -24,12 +24,20 @@ class Game:
         # gun timer
         self.can_shoot = True
         self.shoot_time = 0
-        self.gun_cooldown = 100
+        self.gun_cooldown = 250
 
         # enemy timer
         self.enemy_event = pygame.event.custom_type()
-        pygame.time.set_timer(self.enemy_event, 300)
+        pygame.time.set_timer(self.enemy_event, 400)
         self.spawn_positions = []
+
+        # audio
+        self.shoot_sound = pygame.mixer.Sound(join('audio', 'shoot.wav'))
+        self.shoot_sound.set_volume(0.4)
+        self.impact_sound = pygame.mixer.Sound(join('audio', 'impact.ogg'))
+        self.music = pygame.mixer.Sound(join('audio', 'music.wav'))
+        self.music.set_volume(0.3)
+        self.music.play(loops = -1)
 
         # setup
         self.load_images()
@@ -48,11 +56,14 @@ class Game:
                     surf = pygame.image.load(full_path).convert_alpha()
                     self.enemy_frames[folder].append(surf)         
 
+    # input for shooting, which is separate from the player input since the gun can shoot independently of the player's movement
     def input(self):
-        if pygame.mouse.get_pressed()[0] and self.can_shoot:
+        left_click = pygame.mouse.get_pressed()[0]
+        space_button = pygame.key.get_pressed()[pygame.K_SPACE]
+        if (left_click or space_button) and self.can_shoot:
+            self.shoot_sound.play()
             pos = self.gun.rect.center + self.gun.player_direction * 50
             Bullet(self.bullet_surf, pos, self.gun.player_direction, (self.all_sprites, self.bullet_sprites))
-            #print('shoot')
             self.can_shoot = False
             self.shoot_time = pygame.time.get_ticks()
 
@@ -61,8 +72,6 @@ class Game:
             current_time = pygame.time.get_ticks()
             if current_time - self.shoot_time >= self.gun_cooldown:
                 self.can_shoot = True 
-
-
 
     def setup(self):
         map = load_pygame(join('data', 'maps', 'world.tmx'))
@@ -83,6 +92,21 @@ class Game:
             else:
                 self.spawn_positions.append((obj.x, obj.y))    
 
+    def bullet_collision(self):
+        if self.bullet_sprites:
+            for bullet in self.bullet_sprites:
+                collision_sprites = pygame.sprite.spritecollide(bullet, self.enemy_sprites, False, pygame.sprite.collide_mask)
+                if collision_sprites:
+                    self.impact_sound.play()
+                    for sprite in collision_sprites:
+                        sprite.destroy()
+                    bullet.kill()    
+    
+    def player_collision(self):
+       if pygame.sprite.spritecollide(self.player, self.enemy_sprites, False, pygame.sprite.collide_mask):
+           print('Player hit!') # placeholder for now, player health and damage will be added in the future
+
+
     def run(self):
         while self.running:
            # dt
@@ -101,6 +125,9 @@ class Game:
             self.gun_timer()
             self.input()
             self.all_sprites.update(dt)
+            self.bullet_collision()
+            self.player_collision()
+
              # draw
             self.display_surface.fill('black')
             self.all_sprites.draw(self.player.rect.center) # the position that the camera follows
