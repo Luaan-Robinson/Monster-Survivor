@@ -4,11 +4,11 @@ A top-down survivor shooter built with Python and Pygame
 
 ## Screenshots
 
-<img src="screenshots/gameplay1.png" width="550"/>
+<img src="screenshots/gameplay1.png" width="600"/>
 
 <br/>
 
-<img src="screenshots/gameplay2.png" width="550"/>
+<img src="screenshots/gameplay2.png" width="600"/>
 
 ## Gameplay
 
